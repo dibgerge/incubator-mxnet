@@ -59,13 +59,15 @@ class Categorical(Distribution):
                 "Either `prob` or `logit` must be specified, but not both. " +
                 "Received prob={}, logit={}".format(prob, logit))
 
+        super(Categorical, self).__init__(
+            F=_F, event_dim=0, validate_args=validate_args)
+
         if prob is not None:
             self.prob = prob
         else:
-            self.logit = logit
-
-        super(Categorical, self).__init__(
-            F=_F, event_dim=0, validate_args=validate_args)
+            fnp = self.F.np
+            shift = fnp.expand_dims(fnp.log(fnp.sum(fnp.exp(logit), axis=-1)), -1)
+            self.logit = logit - shift
 
     @cached_property
     def prob(self):
